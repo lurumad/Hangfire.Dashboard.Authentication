@@ -1,6 +1,5 @@
 using Hangfire;
 using Hangfire.SqlServer;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
@@ -29,7 +28,7 @@ namespace HangfireDashboardIdentityServer4
                     cfg.AddPolicy("Hangfire", cfgPolicy =>
                     {
                         cfgPolicy.AddRequirements().RequireAuthenticatedUser();
-                        cfgPolicy.AddAuthenticationSchemes(CookieAuthenticationDefaults.AuthenticationScheme);
+                        cfgPolicy.AddAuthenticationSchemes(OpenIdConnectDefaults.AuthenticationScheme);
                     });
                 })
                 .AddAuthentication(cfg =>
@@ -72,8 +71,6 @@ namespace HangfireDashboardIdentityServer4
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            const string HangfireDashboardPath = "/hangfire";
-
             app.UseStaticFiles();
 
             if (env.IsDevelopment())
@@ -82,19 +79,6 @@ namespace HangfireDashboardIdentityServer4
             }
 
             app.UseAuthentication();
-
-            app.Use(async (context, next) =>
-            {
-                if (context.Request.Path.Equals(HangfireDashboardPath, StringComparison.OrdinalIgnoreCase)
-                    && !context.User.Identity.IsAuthenticated)
-                {
-                    await context.ChallengeAsync();
-                    return;
-                }
-
-                await next();
-            });
-
             app.UseRouting();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
